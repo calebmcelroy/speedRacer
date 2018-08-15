@@ -12,8 +12,8 @@ var CONFIG = {
 		SETTINGS: {
 			movingAveragePeriod: 20, //period
 			adcPollFreq: 5, //ms
-			variance: 0.5, //percentage
-		}
+			variance: 0.5 //percentage
+		},
     RELEASE: {
             pin: "GPIO6",
             human_name: "Release Mechanism",
