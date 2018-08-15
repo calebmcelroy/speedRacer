@@ -22,10 +22,13 @@ Step two is to wire the appropriate sensors to your track, and connect them to t
 - The RESET button may be pushed to manually reset the track or application state. Connect to GPIO12
 - The LED INDICATOR relays various information about the track and system state, which may be useful, but is not critical. Wire to GPIO5
 
-Wire bumper switches at the end of each lane like so (up to 3, for the moment, but additional lanes can be added with modifications): 
+Wire bumper switches at the end of each lane like so (up to 2, for the moment, but additional lanes can be added with modifications): 
 - Lane 1: GPIO13
 - Lane 2: GPIO19
-- Lane 3: GPIO26
+
+Or wire up a mcp3008 with photoresistors to detech when the car passes the finish line:
+- Lane 1 -> Channel 0 
+- Lane 2 -> Channel 1
 
 Once everything has been flashed and wired appropriately, connect the Pi to power. The system will broadcast a wireless network named "SpeedRacer", which you can connect to with the password `chimchim`. Once connected, visit http://speedracer.local (or http://192.168.1.1) in your browser to view the scoreboard. You're off to the races!
 
@@ -33,6 +36,8 @@ Once everything has been flashed and wired appropriately, connect the Pi to powe
 
 The system is wide open to modification, simply connect to the SpeedRacer WiFi network and `ssh pi@192.168.1.1`. From there, 
 you can use the default password (`raspberry`) to modify code and system settings as you see fit. 
+
+Modify photoresistor sensitivity by modifying CONFIG variable within Sources/Server/main.js
 
 System settings are located in the following places: 
 
