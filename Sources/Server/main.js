@@ -4,8 +4,16 @@ var five = require('johnny-five');
 var board = new five.Board({io: new raspi()});
 var http = require('http');
 var url = require('url');
+var EventEmitter = require('events');
+var Mcp3008 = require('mcp3008.js');
+var adc = new Mcp3008();
 
 var CONFIG = {
+		SETTINGS: {
+			movingAveragePeriod: 20, //period
+			adcPollFreq: 5, //ms
+			variance: 0.5, //percentage
+		}
     RELEASE: {
             pin: "GPIO6",
             human_name: "Release Mechanism",
@@ -26,6 +34,8 @@ var CONFIG = {
         {
             id: 1,
             pin: "GPIO13",
+            adcchannel: 0,
+            events: new EventEmitter(),
             human_name: "Track 1",
             endTime: '',
             computedTimeSeconds: '',
@@ -34,19 +44,23 @@ var CONFIG = {
         {
             id: 2,
             pin: "GPIO19",
+            adcchannel: 1,
+            events: new EventEmitter(),
             human_name: "Track 2",
             endTime: '',
             computedTimeSeconds: '',
             ctl: {}
         },
-        {
+        /*{
             id: 3,
             pin: "GPIO26",
+            adcchannel: 2,
+            events: new EventEmitter(),
             human_name: "Track 3",
 	          endTime: '',
             computedTimeSeconds: '',
             ctl: {}
-        }
+        }*/
     ],
     HTTP_PORT: 8080
 };
@@ -79,29 +93,51 @@ board.on("ready", function() {
   }).on("up", function(){
     updateLEDState(1);
   });
-
-  // Only records end time if one hasn't been recorded yet
-  // Will maintain first recorded time until track is reset to prevent accidental overwrites.
-  CONFIG.TRACKS[0].ctl.on("down", function() {
-    if(CONFIG.TRACKS[0].endTime === ""){
-      CONFIG.TRACKS[0].endTime = Date.now();
-      CONFIG.TRACKS[0].computedTimeSeconds = computeElapsedTime(CONFIG.RELEASE.startTime, CONFIG.TRACKS[0].endTime);
-    }
-  });
-
-  CONFIG.TRACKS[1].ctl.on("down", function() {
-    if(CONFIG.TRACKS[1].endTime === ""){
-      CONFIG.TRACKS[1].endTime = Date.now();
-      CONFIG.TRACKS[1].computedTimeSeconds = computeElapsedTime(CONFIG.RELEASE.startTime, CONFIG.TRACKS[1].endTime);
-    }
-  });
-
-  CONFIG.TRACKS[2].ctl.on("down", function() {
-    if(CONFIG.TRACKS[2].endTime === ""){
-      CONFIG.TRACKS[2].endTime = Date.now();
-      CONFIG.TRACKS[2].computedTimeSeconds = computeElapsedTime(CONFIG.RELEASE.startTime, CONFIG.TRACKS[2].endTime);
-    }
-  });
+  
+  
+  
+  for(var i = 0; i < CONFIG.TRACKS.length; i++) {
+	  
+	  /*
+		  Watch Track ADC Channel Checking for Variance
+		  - variances uses a moving average of a specified period & frequency.
+		*/
+	  var track = CONFIG.TRACKS[i];
+	  var values = [];
+	  
+	  var intervalID = setInterval(function() {
+		  readADCChannel(track.adcchannel, function(value) {
+			  values.push(value);
+			  if(values.length > CONFIG.SETTINGS.movingAveragePeriod*2) { values.unshift(); }	
+			  
+			  var mavalues = movingAverage(values, CONFIG.SETTINGS.movingAveragePeriod);	
+			  var prevaverage = mavalues[CONFIG.SETTINGS.movingAveragePeriod-1];	  
+			  var curraverage = mavalues[(CONFIG.SETTINGS.movingAveragePeriod*2)-1];
+			  var variance = Math.abs(curraverage/prevaverage);
+			  
+			  if(variance >= CONFIG.SETTINGS.variance) {
+				  track.event.emit("finish");
+			  }
+		  });
+	  }, 5);
+	  
+	  
+	  /*
+		*  Handle Track Finish
+		*/
+		track.events.on("finish", function() {
+			trackFinished(i);			
+		});
+		
+		
+		/*
+		*	Handle Track Button Down
+		*/
+		track.ctl.on("down", function() {
+			trackFinished(i);
+		});
+		
+  }
 });
 
 http.createServer(function(req, res) {
@@ -125,6 +161,13 @@ http.createServer(function(req, res) {
 }.bind({
     CONFIG: CONFIG
 })).listen(CONFIG.HTTP_PORT);
+
+function trackFinished(index) {
+	if(CONFIG.TRACKS[index].endTime === ""){
+    CONFIG.TRACKS[index].endTime = Date.now();
+    CONFIG.TRACKS[index].computedTimeSeconds = computeElapsedTime(CONFIG.RELEASE.startTime, CONFIG.TRACKS[index].endTime);
+  }
+}
 
 function processRequest(method, req, res) {
 
@@ -182,9 +225,10 @@ function strip_gpioCtl(config) {
 
     stripped.TRACKS = [];
     for (var i = 0; i < config.TRACKS.length; i++) {
-        var newCar = JSON.parse(JSON.stringify(config.TRACKS[i], GPIOreplacer));
-        delete newCar.ctl;
-        stripped.TRACKS[i] = newCar;
+      var newCar = JSON.parse(JSON.stringify(config.TRACKS[i], GPIOreplacer));
+      delete newCar.ctl;
+      delete newCar.events;
+      stripped.TRACKS[i] = newCar;
     }
 
     return stripped;
@@ -213,6 +257,64 @@ function computeElapsedTime(startTime, endTime){
 // @params state - 1 or 0 for on or off, respectively.
 function updateLEDState(state) {
   return state === 0 ? CONFIG.LED_INDICATOR.ctl.off() : CONFIG.LED_INDICATOR.ctl.on();
+}
+
+function readADCChannel(channel, callback) {
+	adc.read(channel, function (value) {
+    callback(value);
+	});	
+}
+
+function movingAverage(data, size) {
+  const length = data.length
+
+  if (!size) {
+    return data.reduce((a, b) => a + b) / length
+  }
+
+  if (size <= 1) {
+    return data.slice()
+  }
+
+  if (size > length) {
+    return Array(length)
+  }
+
+  const prepare = size - 1
+  const ret = []
+  let sum = 0
+  let i = 0
+  let counter = 0
+  let datum
+
+  for (; i < length && counter < prepare; i ++) {
+    datum = data[i]
+
+    if (isNumber(datum)) {
+      sum += datum
+      counter ++
+    }
+  }
+
+  for (; i < length; i ++) {
+    datum = data[i]
+
+    if (isNumber(datum)) {
+      sum += datum
+    }
+
+    if (isNumber(data[i - size])) {
+      sum -= data[i - size]
+    }
+
+    ret[i] = sum / size
+  }
+
+  return ret
+}
+
+function isNumber(subject) {
+	return typeof subject === 'number';
 }
 
 // Blink LED indicator rapidly (every 100ms) on uncaught exceptions.
