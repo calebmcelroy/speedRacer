@@ -4,14 +4,8 @@ var five = require('johnny-five');
 var board = new five.Board({io: new raspi()});
 var http = require('http');
 var url = require('url');
-var EventEmitter = require('events');
 
-var CONFIG = {
-		SETTINGS: {
-			movingAveragePeriod: 20, //period
-			adcPollFreq: 5, //ms
-			variance: 0.5 //percentage
-		},
+var CONFIG  =  {
     RELEASE: {
             pin: "GPIO6",
             human_name: "Release Mechanism",
@@ -108,9 +102,14 @@ board.on("ready", function() {
 		/*
 		*	Handle Track Button Down
 		*/
-		track.ctl.on("down", function() {
-			trackFinished(i);
-		});
+		(function() {
+		  var index = i;	
+		
+		  track.ctl.on("down", function() {
+			console.log("Track Finished"+index);
+			trackFinished(index);
+		  });
+                })();
 		
   }
 });
@@ -138,6 +137,7 @@ http.createServer(function(req, res) {
 })).listen(CONFIG.HTTP_PORT);
 
 function trackFinished(index) {
+	index = index - 1;
 	if(CONFIG.TRACKS[index].endTime === ""){
     CONFIG.TRACKS[index].endTime = Date.now();
     CONFIG.TRACKS[index].computedTimeSeconds = computeElapsedTime(CONFIG.RELEASE.startTime, CONFIG.TRACKS[index].endTime);
@@ -249,64 +249,6 @@ function computeElapsedTime(startTime, endTime){
 // @params state - 1 or 0 for on or off, respectively.
 function updateLEDState(state) {
   return state === 0 ? CONFIG.LED_INDICATOR.ctl.off() : CONFIG.LED_INDICATOR.ctl.on();
-}
-
-function readADCChannel(channel, callback) {
-	adc.read(channel, function (value) {
-    callback(value);
-	});	
-}
-
-function movingAverage(data, size) {
-  const length = data.length
-
-  if (!size) {
-    return data.reduce((a, b) => a + b) / length
-  }
-
-  if (size <= 1) {
-    return data.slice()
-  }
-
-  if (size > length) {
-    return Array(length)
-  }
-
-  const prepare = size - 1
-  const ret = []
-  let sum = 0
-  let i = 0
-  let counter = 0
-  let datum
-
-  for (; i < length && counter < prepare; i ++) {
-    datum = data[i]
-
-    if (isNumber(datum)) {
-      sum += datum
-      counter ++
-    }
-  }
-
-  for (; i < length; i ++) {
-    datum = data[i]
-
-    if (isNumber(datum)) {
-      sum += datum
-    }
-
-    if (isNumber(data[i - size])) {
-      sum -= data[i - size]
-    }
-
-    ret[i] = sum / size
-  }
-
-  return ret
-}
-
-function isNumber(subject) {
-	return typeof subject === 'number';
 }
 
 // Blink LED indicator rapidly (every 100ms) on uncaught exceptions.

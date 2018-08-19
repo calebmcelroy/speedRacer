@@ -5,9 +5,10 @@
   "main": "main.js",
   "dependencies": {
     "johnny-five": "0.15.x",
-    "url": "0.11.0",
+    "raspi": "^5.0.2",
+    "raspi-gpio": "^6.0.0",
     "raspi-io": "9.0.x",
-    "mcp3008.js": "0.4.x"
+    "url": "0.11.0"
   },
   "devDependencies": {},
   "scripts": {
