@@ -52,6 +52,7 @@ raspi.init(() => {
 
   // Parse configuration, set LED to solid green to indicate that track is ready.
   watchPins();
+  console.log("WATCHING PINS");
 
   // Monitor events from track release mechanism
   CONFIG.RELEASE.events.on("HIGH", function() {
@@ -63,20 +64,15 @@ raspi.init(() => {
   
   
   for(var i = 0; i < CONFIG.TRACKS.length; i++) {
-	  /*
-		  Watch Track ADC Channel Checking for Variance
-		  - variances uses a moving average of a specified period & frequency.
-		*/
-	  var track = CONFIG.TRACKS[i];		
-		
 		/*
 		*	Handle Track Button Down
 		*/
 		(function() {
+			var track = CONFIG.TRACKS[i];		
 		  var index = i;	
 		
 		  track.events.on("HIGH", function() {
-				console.log("Track Finished"+index);
+				console.log("Track Finished "+index+1);
 				trackFinished(index);
 		  });
     })();
@@ -163,10 +159,14 @@ function watchPins() {
 }
 
 function monitorPin(pin, lastvalue, events) {
-	if(pin.read() != lastvalue) {
-		if(lastvalue) {
+	var value = pin.read();
+	console.log(value, lastvalue);
+	if(value != lastvalue) {
+		if(value) {
+			console.log("HIGH");
 			events.emit("HIGH");
 		} else {
+			console.log("LOW");
 			events.emit("LOW");
 		}
   }
