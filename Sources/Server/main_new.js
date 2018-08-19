@@ -45,6 +45,7 @@ var CONFIG  =  {
             ctl: {}
         }*/
     ],
+    winner: null,
     HTTP_PORT: 8080
 };
 
@@ -103,7 +104,6 @@ http.createServer(function(req, res) {
 })).listen(CONFIG.HTTP_PORT);
 
 function trackFinished(index) {
-	index = index - 1;
 	if(CONFIG.TRACKS[index].endTime === ""){
     CONFIG.TRACKS[index].endTime = Date.now();
     CONFIG.TRACKS[index].computedTimeSeconds = computeElapsedTime(CONFIG.RELEASE.startTime, CONFIG.TRACKS[index].endTime);
@@ -150,10 +150,10 @@ function processRequest(method, req, res) {
 // Parses configuration and instantiates all relevant track components
 function watchPins() {
   setInterval(function() {	  
-	  monitorPin(CONFIG.RELEASE.pin, CONFIG.RELEASE.lastvalue, CONFIG.RELEASE.events);
+	  CONFIG.RELEASE.lastvalue = monitorPin(CONFIG.RELEASE.pin, CONFIG.RELEASE.lastvalue, CONFIG.RELEASE.events);
 	  
 	  for(var i = 0; i < CONFIG.TRACKS.length; i++) {
-		  monitorPin(CONFIG.TRACKS[i].pin, CONFIG.TRACKS[i].lastvalue, CONFIG.TRACKS[i].events);
+		  CONFIG.TRACKS[i].lastvalue = monitorPin(CONFIG.TRACKS[i].pin, CONFIG.TRACKS[i].lastvalue, CONFIG.TRACKS[i].events);
 	  }
   }, 15);
 }
@@ -170,6 +170,8 @@ function monitorPin(pin, lastvalue, events) {
 			events.emit("LOW");
 		}
   }
+  
+  return value;
 }
 
 function getState() {
