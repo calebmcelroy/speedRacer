@@ -160,13 +160,13 @@ function watchPins() {
 
 function monitorPin(pin, lastvalue, events) {
 	var value = pin.read();
-	console.log(value, lastvalue);
+	//console.log(value, lastvalue);
 	if(value != lastvalue) {
 		if(value) {
-			console.log("HIGH");
+			//console.log("HIGH");
 			events.emit("HIGH");
 		} else {
-			console.log("LOW");
+			//console.log("LOW");
 			events.emit("LOW");
 		}
   }
