@@ -152,6 +152,10 @@
 	    text-align: center;
             font-size: 10px;
         }
+        
+        .winner {
+	        color: green;
+        }
     </style>
 </head>
 
@@ -236,13 +240,27 @@
                         var params = constructURL('/get/state');
                         params.success = function(data) {
                             data = JSON.parse(data);
+                            
                             for (var i = 0; i < data.TRACKS.length; i++) {
                                 $('#track' + (i+1) + ' > div.slot.slotHeader > h2')[0].textContent = data.TRACKS[i].human_name;
+                                
+                                if(data.TRACKS[i].computedTimeSeconds < winnertime || winnertime === null) {
+	                                winnertime = data.TRACKS[i].computedTimeSeconds;
+	                                winner = (i+1);
+                                }
+                                
                                 if(data.TRACKS[i].computedTimeSeconds !== "")
                                   $('#track' + (i+1) + ' > div.slot.carTime > h3')[0].textContent = data.TRACKS[i].computedTimeSeconds + 's';
 				                        else
 				                          $('#track' + (i+1) + ' > div.slot.carTime > h3')[0].textContent = "READY";
                             }
+                            
+                            if(data.winner !== null) {
+                            	$('#track' + (data.winner+1) ).addClass("winner");
+                            } else {
+	                            $('.winner').removeClass("winner");
+                            }                        
+                            
                         }
                         $.ajax(params);
                     }, 500);

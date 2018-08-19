@@ -5,8 +5,6 @@ var board = new five.Board({io: new raspi()});
 var http = require('http');
 var url = require('url');
 var EventEmitter = require('events');
-var Mcp3008 = require('mcp3008.js');
-var adc = new Mcp3008();
 
 var CONFIG = {
 		SETTINGS: {
@@ -25,6 +23,11 @@ var CONFIG = {
             human_name: "Reset Button",
             ctl: {}
     },
+    RESETOUT: {
+            pin: "GPIO16",
+            human_name: "Reset Button",
+            ctl: {}
+    },
     LED_INDICATOR: {
             pin: "GPIO5",
             human_name: "LED Indicator",
@@ -34,8 +37,6 @@ var CONFIG = {
         {
             id: 1,
             pin: "GPIO13",
-            adcchannel: 0,
-            events: new EventEmitter(),
             human_name: "Track 1",
             endTime: '',
             computedTimeSeconds: '',
@@ -44,8 +45,6 @@ var CONFIG = {
         {
             id: 2,
             pin: "GPIO19",
-            adcchannel: 1,
-            events: new EventEmitter(),
             human_name: "Track 2",
             endTime: '',
             computedTimeSeconds: '',
@@ -104,30 +103,6 @@ board.on("ready", function() {
 		*/
 	  var track = CONFIG.TRACKS[i];
 	  var values = [];
-	  
-	  var intervalID = setInterval(function() {
-		  readADCChannel(track.adcchannel, function(value) {
-			  values.push(value);
-			  if(values.length > CONFIG.SETTINGS.movingAveragePeriod*2) { values.unshift(); }	
-			  
-			  var mavalues = movingAverage(values, CONFIG.SETTINGS.movingAveragePeriod);	
-			  var prevaverage = mavalues[CONFIG.SETTINGS.movingAveragePeriod-1];	  
-			  var curraverage = mavalues[(CONFIG.SETTINGS.movingAveragePeriod*2)-1];
-			  var variance = Math.abs(curraverage/prevaverage);
-			  
-			  if(variance >= CONFIG.SETTINGS.variance) {
-				  track.event.emit("finish");
-			  }
-		  });
-	  }, 5);
-	  
-	  
-	  /*
-		*  Handle Track Finish
-		*/
-		track.events.on("finish", function() {
-			trackFinished(i);			
-		});
 		
 		
 		/*
@@ -166,6 +141,18 @@ function trackFinished(index) {
 	if(CONFIG.TRACKS[index].endTime === ""){
     CONFIG.TRACKS[index].endTime = Date.now();
     CONFIG.TRACKS[index].computedTimeSeconds = computeElapsedTime(CONFIG.RELEASE.startTime, CONFIG.TRACKS[index].endTime);
+  }
+  
+  var trackTime = CONFIG.TRACKS[index].computedTimeSeconds;
+  var winner = true; 
+  for(var i = 0; i < CONFIG.TRACKS.length; i++) {
+	  if(winner >= CONFIG.TRACKS[i].computedTimeSeconds) {
+		  winner = false;
+	  }
+  }
+  
+  if(winner) {
+	  CONFIG.winner = index;
   }
 }
 
@@ -208,6 +195,7 @@ function parseConfig() {
     CONFIG.LED_INDICATOR.ctl = new five.Led(CONFIG.LED_INDICATOR.pin);
     CONFIG.RELEASE.ctl = new five.Button({pin: CONFIG.RELEASE.pin, holdtime: 1000});
     CONFIG.RESET.ctl = new five.Button(CONFIG.RESET.pin);
+    CONFIG.RESETOUT.ctl = new five.Led(CONFIG.RESETOUT.pin);
 
     for (var i = 0; i < CONFIG.TRACKS.length; i++) {
         CONFIG.TRACKS[i].ctl = new five.Button({pin: CONFIG.TRACKS[i].pin});
@@ -246,6 +234,10 @@ function resetState(){
     CONFIG.TRACKS[i].endTime = '';
     CONFIG.TRACKS[i].computedTimeSeconds = '';
   }
+  CONFIG.RESETOUT.ctl.on();
+  setTimeout(function() {
+	  CONFIG.RESETOUT.ctl.off();
+  }, 100);
 }
 
 // @params startTime - initial time at which car was released
