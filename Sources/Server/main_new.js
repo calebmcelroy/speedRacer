@@ -157,7 +157,7 @@ function watchPins() {
 	  monitorPin(CONFIG.RELEASE.pin, CONFIG.RELEASE.lastvalue, CONFIG.RELEASE.events);
 	  
 	  for(var i = 0; i < CONFIG.TRACKS.length; i++) {
-		  monitorPin(CONFIG.TRACK[i].pin, CONFIG.TRACK[i].lastvalue, CONFIG.TRACK[i].events);
+		  monitorPin(CONFIG.TRACKS[i].pin, CONFIG.TRACKS[i].lastvalue, CONFIG.TRACKS[i].events);
 	  }
   }, 15);
 }
