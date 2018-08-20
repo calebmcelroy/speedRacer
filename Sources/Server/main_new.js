@@ -112,7 +112,7 @@ function trackFinished(index) {
   var trackTime = CONFIG.TRACKS[index].computedTimeSeconds;
   var winner = true; 
   for(var i = 0; i < CONFIG.TRACKS.length; i++) {
-	  if(winner >= CONFIG.TRACKS[i].computedTimeSeconds) {
+	  if(CONFIG.TRACKS[index].computedTimeSeconds >= CONFIG.TRACKS[i].computedTimeSeconds) {
 		  winner = false;
 	  }
   }

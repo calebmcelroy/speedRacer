@@ -156,6 +156,22 @@
         .winner {
 	        color: green;
         }
+        
+        
+				
+				#container::before {
+				  content: "";
+				  display: block;
+				  height: 30px;
+				  width: 30px;
+				  position:absolute;
+				  background: #c12d2d;
+				  border-radius: 100%;
+				}
+				
+				#container.active::before {
+				  background: #2dc12d;
+				}
     </style>
 </head>
 
@@ -209,14 +225,10 @@
                         <span id="reset">Reset</span>
                     </div>
                 </div>
-
-                <div class="disclaimer">
-                    <span id="disclaimer-version">SpeedRacer v1.0</span>
-                    <span id="disclaimer-message">© 2016 C. Trezevant - R. Tait's 6th pd PrincTech</span>
-                </div>
+                
                 <script>
                     var CONFIG = {
-                        host: "http://192.168.1.1",
+                        host: "http://192.168.1.96",
                         port: 8080,
                     };
 
@@ -238,7 +250,13 @@
                     // Update scoreboard state every second.
                     setInterval(function() {
                         var params = constructURL('/get/state');
+                        
+                        params.error = function(jqXHR, textStatus, errorThrown) {
+	                      	$("#container").removeClass("active");
+                        }
+                        
                         params.success = function(data) {
+	                        	$("#container").addClass("active");
                             data = JSON.parse(data);
                             
                             for (var i = 0; i < data.TRACKS.length; i++) {
@@ -263,7 +281,7 @@
                             
                         }
                         $.ajax(params);
-                    }, 500);
+                    }, 200);
                 </script>
 </body>
 
