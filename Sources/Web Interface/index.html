@@ -269,6 +269,7 @@
                             }
                             
                             if(data.winner !== null) {
+	                            $('.winner').removeClass("winner");
                             	$('#track' + (data.winner+1) ).addClass("winner");
                             } else {
 	                            $('.winner').removeClass("winner");
