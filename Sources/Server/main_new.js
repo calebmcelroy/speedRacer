@@ -109,16 +109,15 @@ function trackFinished(index) {
     CONFIG.TRACKS[index].computedTimeSeconds = computeElapsedTime(CONFIG.RELEASE.startTime, CONFIG.TRACKS[index].endTime);
   }
   
-  var winner = index; 
+  var winner = index;
+  
   for(var i = 0; i < CONFIG.TRACKS.length; i++) {
-	  if(CONFIG.TRACKS[winner].computedTimeSeconds <= CONFIG.TRACKS[i].computedTimeSeconds) {
+	  if(CONFIG.TRACKS[i].computedTimeSeconds <= CONFIG.TRACKS[winner].computedTimeSeconds) {
 		  winner = i;
 	  }
   }
   
-  if(winner) {
-	  CONFIG.winner = winner;
-  }
+  CONFIG.winner = winner;
 }
 
 function processRequest(method, req, res) {
