@@ -262,11 +262,6 @@
                             for (var i = 0; i < data.TRACKS.length; i++) {
                                 $('#track' + (i+1) + ' > div.slot.slotHeader > h2')[0].textContent = data.TRACKS[i].human_name;
                                 
-                                if(data.TRACKS[i].computedTimeSeconds < winnertime || winnertime === null) {
-	                                winnertime = data.TRACKS[i].computedTimeSeconds;
-	                                winner = (i+1);
-                                }
-                                
                                 if(data.TRACKS[i].computedTimeSeconds !== "")
                                   $('#track' + (i+1) + ' > div.slot.carTime > h3')[0].textContent = data.TRACKS[i].computedTimeSeconds + 's';
 				                        else
