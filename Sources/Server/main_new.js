@@ -184,6 +184,8 @@ function getState() {
 	data.RELEASE.startTime = CONFIG.RELEASE.startTime;
 	data.RELEASE.lastvalue = CONFIG.RELEASE.lastvalue;
 	
+	data.winner = CONFIG.winner;
+	
 	for(var i = 0; i < CONFIG.TRACKS.length; i++) {
 		data.TRACKS[i] = {};
 		data.TRACKS[i].human_name = CONFIG.TRACKS[i].human_name;
