@@ -198,6 +198,7 @@ function getState() {
 
 // Reset all recorded and computed times, for all tracks
 function resetState(){
+	 CONFIG.winner = null;
   CONFIG.RELEASE.startTime = '';
   for (var i = 0; i < CONFIG.TRACKS.length; i++) {
     CONFIG.TRACKS[i].endTime = '';
